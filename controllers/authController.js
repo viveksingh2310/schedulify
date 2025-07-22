@@ -21,7 +21,7 @@ exports.signup = async (req, res) => {
       appointments: [],        // empty initially
     });
     await newUser.save();
-    res.redirect('/login');
+    res.redirect('/');
   } catch (err) {
     console.error('Signup Error:', err);
     res.status(400).send('Error signing up: ' + err.message);
