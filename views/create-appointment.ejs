@@ -116,7 +116,7 @@
   <script>
     window.addEventListener('DOMContentLoaded', async () => {
     try {
-      const res = await fetch('http://localhost:5000/users/nameId');
+      const res = await fetch('/users/nameId');
       const users = await res.json();
 
       const select = document.getElementById('withId');
