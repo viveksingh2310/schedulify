@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title><%= appointment.title %> - Appointment</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .dashboard-wrapper {
+      display: flex;
+    }
+    .sidebar {
+      height: 100vh;
+      background-color: #7d89f5;
+      padding-top: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 25%;
+      color: white;
+    }
+    .sidebar img {
+      border-radius: 50%;
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      margin-bottom: 20px;
+    }
+    .sidebar .nav-btn {
+      width: 100%;
+      background-color: #d3d3d3;
+      border: none;
+      padding: 15px;
+      margin: 10px 0;
+      font-size: 18px;
+      color: black;
+      text-align: center;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .main-content {
+      flex-grow: 1;
+      padding: 40px;
+    }
+    .top-header {
+      font-size: 36px;
+      font-weight: bold;
+      margin-bottom: 40px;
+    }
+    .appointment-details {
+      background-color: #e0e0e0;
+      padding: 30px;
+      border-radius: 10px;
+      max-width: 700px;
+    }
+    .appointment-details h2 {
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+    .appointment-details .form-control,
+    .appointment-details .form-select {
+      background-color: #f8f9fa;
+    }
+    .action-buttons {
+      margin-top: 30px;
+      display: flex;
+      gap: 20px;
+    }
+    .btn-custom {
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 4px;
+    }
+    .btn-update {
+      background-color: #7d89f5;
+      color: white;
+    }
+    .btn-back {
+      background-color: #d3d3d3;
+      color: black;
+    }
+    .availability-msg {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-wrapper">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <img src="<%= user.profileUrl || 'https://via.placeholder.com/100' %>" alt="Profile Image" />
+      <a href="/appointments/create" class="nav-btn">Create</a>
+      <a href="/appointments" class="nav-btn">Appointments</a>
+      <a href="/calendar" class="nav-btn">Calendar View</a>
+      <a href="/users/profile" class="nav-btn">Profile</a>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <div class="top-header">Schedulify</div>
+
+      <div class="appointment-details">
+        <form id="editForm" method="POST" action="/appointments/<%= appointment._id %>/edit">
+          <h2>Appointment Details</h2>
+
+          <div class="mb-2">
+            <label>Title:</label>
+            <input name="title" type="text" class="form-control" value="<%= appointment.title %>" disabled required />
+          </div>
+
+          <div class="mb-2">
+            <label>Description:</label>
+            <textarea name="description" class="form-control" disabled><%= appointment.description || '' %></textarea>
+          </div>
+
+          <div class="mb-2">
+            <label>Date:</label>
+            <input name="date" type="date" class="form-control" value="<%= appointment.date.toISOString().split('T')[0] %>" disabled required />
+          </div>
+
+          <div class="mb-2">
+            <label>Start Time:</label>
+            <input name="startTime" type="time" class="form-control" value="<%= appointment.startTime %>" disabled required />
+          </div>
+
+          <div class="mb-2">
+            <label>End Time:</label>
+            <input name="endTime" type="time" class="form-control" value="<%= appointment.endTime %>" disabled required />
+          </div>
+
+          <div class="mb-2">
+            <label>With:</label>
+            <select class="form-select" name="withId" id="withId" disabled required>
+              <option value="">-- Select a User --</option>
+            </select>
+          </div>
+
+          <div class="availability-msg" id="availabilityMsg"></div>
+
+          <div class="action-buttons">
+            <button type="button" id="enableEdit" class="btn btn-custom btn-update">Edit</button>
+            <button type="submit" id="submitBtn" class="btn btn-custom btn-update" style="display: none;">Save</button>
+            <a href="/appointments" class="btn btn-custom btn-back">Back</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- JS scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const withIdSelect = document.getElementById('withId');
+      const appointmentWithId = "<%= appointment.withId?._id %>";
+
+      // Populate users in the select
+      try {
+        const res = await fetch('/users/nameId');
+        const users = await res.json();
+        users.forEach(user => {
+          const option = document.createElement('option');
+          option.value = user._id;
+          option.textContent = user.name;
+          if (user._id === appointmentWithId) option.selected = true;
+          withIdSelect.appendChild(option);
+        });
+      } catch (err) {
+        console.error('Failed to load users:', err);
+      }
+
+      // Handle enabling of edit mode
+      const editBtn = document.getElementById('enableEdit');
+      const submitBtn = document.getElementById('submitBtn');
+      const form = document.getElementById('editForm');
+      const fields = form.querySelectorAll('input, textarea, select');
+
+      editBtn.addEventListener('click', () => {
+        fields.forEach(f => f.disabled = false);
+        editBtn.style.display = 'none';
+        submitBtn.style.display = 'inline-block';
+      });
+
+      // Slot availability check on submit
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const date = form.date.value;
+        const startTime = form.startTime.value;
+        const endTime = form.endTime.value;
+        const withId = form.withId.value;
+
+        const res = await fetch('/appointments/check-availability', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ date, startTime, endTime, withId })
+        });
+
+        const result = await res.json();
+        const msg = document.getElementById('availabilityMsg');
+
+        if (!result.available) {
+          msg.textContent = result.message || 'Slot unavailable';
+          msg.style.color = 'red';
+        } else {
+          msg.textContent = '';
+          form.submit(); // continue to actual POST
+        }
+      });
+
+      // Availability check on field input
+      const availabilityMsg = document.getElementById('availabilityMsg');
+      ['date', 'startTime', 'endTime', 'withId'].forEach(id => {
+        form[id]?.addEventListener('input', checkSlotAvailability);
+      });
+
+      async function checkSlotAvailability() {
+        if (form.disabled) return;
+        const date = form.date.value;
+        const startTime = form.startTime.value;
+        const endTime = form.endTime.value;
+        const withId = form.withId.value;
+
+        if (!date || !startTime || !endTime || !withId) {
+          availabilityMsg.textContent = '';
+          return;
+        }
+
+        try {
+          const res = await fetch('/appointments/check-availability', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ date, startTime, endTime, withId })
+          });
+          const result = await res.json();
+          availabilityMsg.textContent = result.message;
+          availabilityMsg.style.color = result.available ? 'green' : 'red';
+        } catch {
+          availabilityMsg.textContent = 'Error checking availability.';
+          availabilityMsg.style.color = 'red';
+        }
+      }
+    });
+  </script>
+</body>
+</html>

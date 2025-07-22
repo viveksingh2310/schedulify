@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Create Appointment - Schedulify</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .sidebar {
+      height: 100vh;
+      background-color: #7d89f5;
+      padding-top: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: white;
+      width: 25%;
+    }
+    .sidebar img {
+      border-radius: 50%;
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      margin-bottom: 20px;
+    }
+    .sidebar .nav-btn {
+      width: 100%;
+      background-color: #d3d3d3;
+      border: none;
+      padding: 15px;
+      margin: 5px 0;
+      font-size: 18px;
+      color: black;
+      text-align: center;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .dashboard-wrapper {
+      display: flex;
+    }
+    .main-content {
+      padding: 30px;
+      flex-grow: 1;
+    }
+    .top-header {
+      font-size: 36px;
+      font-weight: bold;
+      margin-bottom: 30px;
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-wrapper">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <img src="<%= user.profileUrl || 'https://via.placeholder.com/100' %>" alt="Profile Image" />
+      <a href="/appointments/create" class="nav-btn">Create</a>
+      <a href="/appointments" class="nav-btn">Appointments</a>
+      <a href="/calendar" class="nav-btn">Calendar View</a>
+      <a href="/users/profile" class="nav-btn">Profile</a>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content w-100">
+      <div class="top-header">Schedulify</div>
+
+      <h3>Create a New Appointment</h3>
+      <form id="createAppointmentForm" method="POST" action="/appointments/create" class="mt-4">
+        <div class="mb-3">
+          <label class="form-label">Title</label>
+          <input type="text" class="form-control" name="title" required />
+        </div>
+
+        <div class="mb-3">
+  <label class="form-label">With (Select User)</label>
+  <select class="form-select" name="withId" id="withId" required>
+    <option value="">-- Select a User --</option>
+  </select>
+</div>
+
+        <div class="mb-3">
+          <label class="form-label">Description</label>
+          <textarea class="form-control" name="description"></textarea>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Date</label>
+          <!-- <input type="date" class="form-control" name="date" id="date" required /> -->
+          <input type="date" class="form-control" name="date" id="date" required />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Start Time</label>
+          <input type="time" class="form-control" name="startTime" id="startTime" required />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">End Time</label>
+          <input type="time" class="form-control" name="endTime" id="endTime" required />
+        </div>
+
+        <button type="button" id="checkSlotBtn" class="btn btn-info">Check Slot</button>
+        <div id="slotMessage" class="mt-2"></div>
+
+        <button type="submit" class="btn btn-primary mt-3">Create Appointment</button>
+        <a href="/dashboard" class="btn btn-secondary mt-3">Cancel</a>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    window.addEventListener('DOMContentLoaded', async () => {
+    try {
+      const res = await fetch('http://localhost:5000/users/nameId');
+      const users = await res.json();
+
+      const select = document.getElementById('withId');
+      users.forEach(user => {
+        const option = document.createElement('option');
+        option.value = user._id;
+        option.textContent = user.name;
+        select.appendChild(option);
+      });
+    } catch (err) {
+      console.error('Error loading user list:', err);
+      alert('Failed to load user list');
+    }
+  });
+   document.getElementById('checkSlotBtn').addEventListener('click', async () => {
+  const rawDate = document.getElementById('date').value; // e.g., '2025-07-25'
+  // const parsedDate = new Date(`${rawDate}T00:00:00Z`);
+  const startTime = document.getElementById('startTime').value;
+  const endTime = document.getElementById('endTime').value;
+  const withId = document.getElementById('withId').value;
+
+  if (!withId || !rawDate || !startTime || !endTime) {
+    alert('Please fill all fields before checking availability.');
+    return;
+  }
+const body = JSON.stringify({ withId, date: rawDate, startTime, endTime });
+  const response = await fetch('/appointments/check-availability', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body
+  });
+
+  const result = await response.json();
+  const msgDiv = document.getElementById('slotMessage');
+  msgDiv.innerText = result.message;
+  msgDiv.style.color = result.available ? 'green' : 'red';
+});
+
+  </script>
+</body>
+</html>
