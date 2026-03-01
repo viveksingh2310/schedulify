@@ -62,9 +62,15 @@ exports.createAppointment = async (req, res) => {
     await User.findByIdAndUpdate(withId, { $push: { appointments: appointment._id } });
 
     const withUser = await User.findById(withId);
+    try{
     if (withUser) {
       await sendMail(withUser.email, 'New Appointment', `You have a new appointment scheduled: ${title}`);
+       console.log("Email sent successfully");
     }
+  }
+    catch (error) {
+  console.error("Email error:", error);
+}
 
     res.redirect('/calendar');
   } catch (err) {
