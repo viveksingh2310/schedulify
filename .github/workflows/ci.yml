@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   check:
-    name: Install and check JavaScript
+    name: Install, check, and test
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -36,6 +36,5 @@ jobs:
             node --check "$file"
           done < <(git ls-files -z -- '*.js' '*.cjs' '*.mjs')
 
-      # npm test is currently a placeholder that always fails.
-      # Add a test step here once the project has automated tests.
-      # These checks do not start the app or require database/email secrets.
+      - name: Run automated tests
+        run: npm test
